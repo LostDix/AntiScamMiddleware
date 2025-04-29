@@ -38,6 +38,10 @@ class AntiScamMiddleware(BaseMiddleware):
             if not message:
                 return await handler(event, data)
 
+            # Проверяем тип чата - работаем только в группах/супергруппах
+            if not self._is_valid_chat_type(message):
+                return await handler(event, data)
+
             if self._is_service_message(message):
                 return await handler(event, data)
 
@@ -57,6 +61,12 @@ class AntiScamMiddleware(BaseMiddleware):
         except Exception as e:
             logger.exception(f"Error in AntiScamMiddleware: {e}")
             return await handler(event, data)
+
+    def _is_valid_chat_type(self, message: Message) -> bool:
+        """Проверяет, что сообщение пришло из нужного типа чата"""
+        chat_type = message.chat.type
+        # Работаем только в группах и супергруппах
+        return chat_type in ["group", "supergroup"]
 
     async def _check_general_warning(self, message: Message) -> bool:
         """Проверяет условия для отправки предупреждения в общий чат"""
